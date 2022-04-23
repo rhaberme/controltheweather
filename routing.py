@@ -1,10 +1,9 @@
 # 2022-04-22
 
 import numpy as np
-import matplotlib as plt
-# import osmnx as ox
-from collections import defaultdict
-import networkx as nx
+import random
+import time
+
 
 # routing will be realized with Dijkstra's algorithm
 # Dijkstra is one of the fastest and most simple algorithm
@@ -39,6 +38,8 @@ graph_matrix = np.array([
 ])
 graph_matrix.reshape(-1, 4)
 
+weather_station_dict = {"Station 1": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 13, 14, 15, 16, 17, 18], "Station 2": [11, 12]}
+
 
 def change_edge_costs(graph_matrix, weather_station, condition):
     """
@@ -52,8 +53,6 @@ def change_edge_costs(graph_matrix, weather_station, condition):
     :param condition: indicator for the extreme weather (intense)
     :return:
     """
-
-    weather_station_dict = {"Station 1": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 13, 14, 15, 16, 17, 18], "Station 2": [11, 12]}
 
     affected_edges = weather_station_dict[weather_station]
 
@@ -69,7 +68,7 @@ def change_edge_costs(graph_matrix, weather_station, condition):
     return graph_matrix
 
 
-#print(change_edge_costs(graph_matrix=graph_matrix, weather_station="Station 1", condition=2))
+# print(change_edge_costs(graph_matrix=graph_matrix, weather_station="Station 1", condition=2))
 
 
 def dijkstra(graph_matrix, start_node, end_node):
@@ -89,20 +88,21 @@ def dijkstra(graph_matrix, start_node, end_node):
         except IndexError:
             pass
 
-        """try:
+        try:
             for con_edg in graph_matrix[np.where(graph_matrix[:, 2] == current_node)][:, 0]:
                 connected_edges.append(con_edg)
         except IndexError:
-            pass"""
+            pass
 
         cost_to_current_node = best_paths[current_node][1]
-
         for next_edge in connected_edges:
             graph_index = np.where(graph_matrix[:, 0] == next_edge)
             current_cost = graph_matrix[graph_index][0, -1]
             cost_away = current_cost + cost_to_current_node
             # cost_back = graph.costs_back[(current_node, next_node)] + cost_to_current_node
             next_node = int(graph_matrix[graph_index, 2])
+            if next_node == current_node:
+                next_node = int(graph_matrix[graph_index, 1])
             if next_node not in best_paths.keys():
                 best_paths[next_node] = (current_node, cost_away)
             else:
@@ -110,14 +110,8 @@ def dijkstra(graph_matrix, start_node, end_node):
                 if current_smallest_cost > cost_away:
                     best_paths[next_node] = (current_node, cost_away)
 
-        print("best_paths:")
-
-        print(best_paths)
         next_destinations = {node: best_paths[node] for node in best_paths.keys() if node not in visited}
-        print("next_destinations:")
-        print(next_destinations)
-        print("visited: ")
-        print(visited)
+
         if not next_destinations:
             return "Route Not Possible"
         # next node is the destination with the lowest cost
@@ -136,106 +130,35 @@ def dijkstra(graph_matrix, start_node, end_node):
 
 print(dijkstra(graph_matrix=graph_matrix, start_node=12, end_node=13))
 
-# Conversion failed â†’ manual replacement; should be created from a tree (startnodes - endnodes - costs)
-edges = [
-    ('X', 'A', 7),
-    ('X', 'B', 2),
-    ('X', 'C', 3),
-    ('X', 'E', 4),
-    ('A', 'B', 3),
-    ('A', 'D', 4),
-    ('B', 'D', 4),
-    ('B', 'H', 5),
-    ('C', 'L', 2),
-    ('D', 'F', 1),
-    ('F', 'H', 3),
-    ('G', 'H', 2),
-    ('G', 'Y', 2),
-    ('I', 'J', 6),
-    ('I', 'K', 4),
-    ('I', 'L', 4),
-    ('J', 'L', 1),
-    ('K', 'Y', 5),
-]
 
-"""graph = Graph()
-for edge in edges:
-    graph.add_edge(*edge)
-print("edges:\n", edges)
-
-bestway = dijsktra(graph=graph, initial='X', end='Y')
-print("bestway:\n", bestway)
-
-# create directed graph from edges with weights (= costs)
-DG = nx.DiGraph()
-DG.add_weighted_edges_from(edges)
-# DG.add_edges_from(bestway)
-print("nodes: ", DG.number_of_nodes(), "\nedges: ", DG.number_of_edges())
-
-# epaths = [(u, v) for (u, v, d) in DG.edges(data=True) if d["weight"] > 1]
-# ebest = [(u, v) for (u, v, d) in DG.edges(data=True) if d["weight"] <= 1]
-
-pos = nx.spring_layout(DG, seed=7)  # positions for all nodes - seed for reproducibility
-
-# nodes
-nx.draw_networkx_nodes(DG, pos, node_size=500)
-
-# edges
-nx.draw_networkx_edges(DG, pos, edgelist=DG.edges, width=3, alpha=0.5, edge_color="b", style="dashed")
-# nx.draw_networkx_edges(DG, pos, edgelist=ebest, width=4)
-
-# labels
-nx.draw_networkx_labels(DG, pos, font_size=10, font_family="sans-serif")
-
-ax = plt.pyplot.gca()
-ax.margins(0.08)
-plt.pyplot.axis("off")
-plt.pyplot.tight_layout()
-plt.pyplot.show()
-
-"""
-"""
-class Edge:
-    def __init__(self, from_node, to_node, cost_away):
-        self.from_node = from_node
-        self.to_node = to_node
-        self.cost_away = cost_away
-
-    def __repr__(self):
-        return "(%s,%s,%s)" % (str(self.from_node), str(self.to_node), self.cost_away)
+def check_weather_prediction_api():
+     weather_mat = np.array([["Station 1", random.randint(0, 2)],["Station 2", random.randint(0, 2)]])
+     weather_mat.reshape(-1, 2)
+     return weather_mat
 
 
-class Node:
-    def __init__(self, location):
-        self.x, self.y = location
+if __name__ == "__main__":
+    running = True
+    while running:
+        print("CURRENT BEST ROUTE:")
+        print(dijkstra(graph_matrix, 12, 13))
+
+        weather_matrix = check_weather_prediction_api()
+        current_matrix = graph_matrix
+        try:
+            raining_rows_in_weather_matrix = weather_matrix[np.where(weather_matrix[:, -1]!="0")]
+            for rriwm_row in raining_rows_in_weather_matrix:
+                station = rriwm_row[0]
+                extr_weather_indic = int(rriwm_row[1])
+
+                current_matrix = change_edge_costs(current_matrix, station, extr_weather_indic)
+
+            print("CURRENT BEST ROUTE:")
+            print(dijkstra(current_matrix, 12, 13))
+
+        except IndexError:
+            pass
+
+        time.sleep(1)
 
 
-class WeatherStation:
-    def __init__(self, nodes_inside):
-        self.nodes_inside = nodes_inside
-
-
-class Graph:
-    # Modified from https://benalexkeen.com/implementing-djikstras-shortest-path-algorithm-with-python/
-    def __init__(self):
-        """"""
-        self.edges is a dict of all possible next nodes
-        e.g. {'X': ['A', 'B', 'C', 'E'], ...}
-        self.cost_away has all the weights between two nodes in one direction,
-        self.cost_back opposite direction,
-        with the two nodes as a tuple as the key
-        e.g. {('X', 'A'): 7, ('X', 'B'): 2, ...}
-        """"""
-        self.edges = []
-        # self.edges = defaultdict(list)
-
-        # self.costs_away = {}
-        # self.costs_back = {}
-
-    def add_edge(self, edge):
-        self.edges.append(edge)
-        # self.edges[from_node].append(to_node)
-        # self.edges[to_node].append(from_node)
-        # self.costs_away[(from_node, to_node)] = cost_away
-        # self.costs_away[(to_node, from_node)] = cost_away
-"""
