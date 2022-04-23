@@ -1,0 +1,2 @@
+Stations_ID;Stationsname;Von_Datum;Bis_Datum
+  1420;Frankfurt/Main                          ;19350701;
